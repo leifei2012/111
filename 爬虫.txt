@@ -1,0 +1,271 @@
+ecode的作用是将其他编码的字符串转换成unicode编码，如str1.decode('gb2312')，表示将gb2312编码的字符串str1转换成unicode编码。
+encode的作用是将unicode编码转换成其他编码的字符串，如str2.encode('gb2312')，表示将unicode编码的字符串str2转换成gb2312编码。
+因此，转码的时候一定要先搞明白，字符串str是什么编码，然后decode成unicode，然后再encode成其他编码
+print("I'm %s. I'm %d year old" % ('Vamei', 99))
+
+【1】from bs4 import BeautifulSoup
+import requests
+res = requests.get("http://news.sina.com.cn/")
+res.encoding="utf-8"
+soup=BeautifulSoup(res.text,"html.parser")
+b=soup.select(".ct_t_01")[0]            获取ct_t_01类   如<a href="http://news.sina.com.cn/c/nd/2017-09-30/doc-ifymkwwk7105316.shtml" target="_blank">吉林</a>
+c=b.select("a")                         获取ct_t_01类a标签
+for d in c: 
+    print(d["href"])                    获取ct_t_01类a标签中href内容
+
+
+
+【2】from bs4 import BeautifulSoup
+import requests
+res = requests.get("http://news.sina.com.cn/")
+res.encoding="utf-8"
+soup=BeautifulSoup(res.text,"html.parser")
+b=soup.select("#ad_entry_b2")[0]                      获取id ad_entry_b2   如<li class="topli14"><a href="http://news.sina.com.cn/c/nd/2017-09-30/doc-ifymmiwm2386314.shtml" target="_blank">3名打虎“副部”在国务院官网同框</a></li>,
+c=b.find_all("li")                                    获取ad_entry_b2下的li标签
+for d in c:  
+   print(d.text)                                      打印每个li中的文字
+
+【3】from bs4 import BeautifulSoup
+import requests
+res = requests.get("http://news.sina.com.cn/")
+res.encoding="utf-8"
+soup=BeautifulSoup(res.text,"html.parser")
+b=soup.select("#ad_entry_b2")[0]
+c=b.find_all("li")                                    获取ad_entry_b2下的li标签
+for d in c:
+    e=d.select("a")[0]                                获取 如<a href="http://news.sina.com.cn/c/nd/2017-09-30/doc-ifymmiwm2386314.shtml" target="_blank">3名打虎“副部”在国务院官网同框</a>
+    print(e["href"])                                  获取 a标签的href值
+【4】
+from bs4 import BeautifulSoup
+import requests
+import pandas
+res = requests.get("http://bj.xiaozhu.com/?startDate=2017-10-03&endDate=2017-10-05")
+res.encoding="utf-8"
+soup=BeautifulSoup(res.text,"html.parser")
+a=soup.select(".pic_list")[0]
+b=a.find_all("li")
+zd={}
+jiage1=[]
+xiangye1=[]
+biaoti1=[]
+for j in range(len(b)):
+    c=b[j].select(".result_price")[0]
+    zd["jiage"]=c.find("i").string
+    d=b[j].select(".result_img")[0]
+    zd["xiangye"]=d.find("a")["href"]
+    dianping=b[j].select(".commenthref")[0].text
+    zd["biaoti"]=b[j].select(".result_intro")[0].find("a").text
+    jiage1.append(zd["jiage"])
+    xiangye1.append(zd["xiangye"])
+    biaoti1.append(zd["biaoti"])
+e=pd.DataFrame({
+             "jiage":jiage1,
+             "xiangye":xiangye1,
+             "biaoti":biaoti1
+})
+e.to_excel('Sheet.xlsx')                                      用pandas输出xlsx格式文件
+【5】写入到txt文件中
+# coding: UTF-8
+from bs4 import BeautifulSoup
+import requests
+res = requests.get("http://bj.xiaozhu.com/?startDate=2017-10-03&endDate=2017-10-05")
+res.encoding="utf-8"
+soup=BeautifulSoup(res.text,"html.parser")
+a=soup.select(".pic_list")[0]
+b=a.find_all("li")
+zd={}
+jiage1=[]
+xiangye1=[]
+biaoti1=[]
+f=open('D:/111.txt','w')
+for j in range(len(b)):
+    c=b[j].select(".result_price")[0]
+    zd["jiage"]=c.find("i").string
+    d=b[j].select(".result_img")[0]
+    zd["xiangye"]=d.find("a")["href"]
+    dianping=b[j].select(".commenthref")[0].text
+    zd["biaoti"]=b[j].select(".result_intro")[0].find("a").text
+    f.write(zd["jiage"]+'\t'+zd["xiangye"]+'\t'+zd["biaoti"]+'\n')    
+【6】
+import pymysql as py
+from bs4 import BeautifulSoup
+import requests
+res = requests.get("http://bj.xiaozhu.com/?startDate=2017-10-03&endDate=2017-10-05")
+res.encoding="utf8"
+soup=BeautifulSoup(res.text,"html.parser")
+a=soup.select(".pic_list")[0]
+b=a.find_all("li")
+zd={}
+jiage1=[]
+xiangye1=[]
+biaoti1=[]
+db=py.connect("localhost","root","1qaz","test",charset="utf8")
+cur = db.cursor()
+db.commit()
+sql="create table IF NOT EXISTS text(jiage char(255),xiangye char(255),biaoti char(255))"
+cur.execute(sql)
+db.commit()
+for j in range(len(b)):
+    c=b[j].select(".result_price")[0]
+    v1=c.find("i").string
+    d=b[j].select(".result_img")[0]
+    v2=d.find("a")["href"]
+    dianping=b[j].select(".commenthref")[0].text
+    v3=b[j].select(".result_intro")[0].find("a").text
+    sql1 = "INSERT INTO text VALUES ('%s','%s','%s')"%(v1,v2,v3)
+    cur.execute(sql1)
+    db.commit()               
+1，涉及到将编码设置为utf8格式（db=py.connect("localhost","root","1qaz","test",charset="utf8")）
+期间出现“UnicodeEncodeError: 'latin-1' codec can't encode characters”提示导致无法向mysql数据库传入汉字，通过（charset="utf8"设置utf8编码方式）解决
+出现“Data too long for column”提示，通过更改char（）大小，删除原数据库重启mysql服务，新建数据库解决。还对mysql数据库使用过“set names utf8”命令。
+2，sql1 = "INSERT INTO text VALUES ('%s,%s,%s')"%(v1,v2,v3)   变量v1 v2 v3传入。
+【7】爬取多页数据 并传入数据库中
+import pymysql as py
+from bs4 import BeautifulSoup
+import requests
+#import re
+urls=["http://bj.xiaozhu.com/search-duanzufang-p{}-0/?startDate=2017-10-03&endDate=2017-10-05".format(i) for i in range(2,10,1)]
+for url in urls:
+    res = requests.get(url)
+    res.encoding = "utf8"
+    soup = BeautifulSoup(res.text, "html.parser")
+    a = soup.select(".pic_list")[0]
+    b = a.find_all("li")
+    db=py.connect("localhost","root","1qaz","test",charset="utf8")
+    cur = db.cursor()
+    db.commit()
+    sql="create table IF NOT EXISTS text(jiage char(255),xiangye char(255),pingjia char(255),biaoti char(255))"
+    cur.execute(sql)
+    db.commit()
+    for j in range(len(b)):
+        c=b[j].select(".result_price")[0]
+        v1=c.find("i").string
+        #f=re.findall("\d+",v1)[0]                            使用“f=re.findall("\d+",v1)[0]”找出v1中的数字，并把v1转变成str类型，之前v1为tag类型（使用type函数查看类型）
+        #s=int(f)                                             将f转变为整数类型，不进行类型转换，传入数据库后v1也可按整数操作，在python中不行；不进行上一步直接转换成整数也行                              
+        d=b[j].select(".result_img")[0]
+        v2=d.find("a")["href"]
+        v3=b[j].select(".commenthref")[0].text.strip().lstrip('-')
+        v4=b[j].select(".result_intro")[0].find("a").text
+        sql1 = "INSERT INTO text VALUES ('%s','%s','%s','%s')"%(v1,v2,v3,v4)
+        cur.execute(sql1)
+        db.commit()                      
+【8】爬取多页
+# coding: UTF-8
+import pymongo
+import time
+import requests
+from bs4 import BeautifulSoup
+client=pymongo.MongoClient('localhost',27017)
+ceshi=client['ceshi']
+url_list=ceshi['url_list3']
+item_info=ceshi['item_info']
+def get_links_from(channel,pages,who_sells=0):
+    list_view='{}{}/pn{}/'.format(channel,str(who_sells),str(pages))
+    wb_data=requests.get(list_view)
+    time.sleep(1)
+    soup=BeautifulSoup(wb_data.text,'lxml')
+    if soup.find('td','t'):         #标签为td 类为t。find_all模糊匹配，select精确匹配（select也是返回所有满足条件的内容）。实际上find()也就是当limit=1时的find_all()。
+        for link in soup.select('td.t a.t'):
+            item_link=link.get('href').split('?')[0]
+            if item_link!='http://jump.zhineng.58.com/jump':
+                url_list.insert_one({'url':item_link})
+                print(item_link)
+            else:
+                pass
+    else:
+        pass
+def get_item_info(url):
+    wb_data=requests.get(url)
+    soup=BeautifulSoup(wb_data.text,'lxml')
+    no_longer_exist = '404' in soup.find('script', type='text/javascript').get('src').split('/')#布尔
+    if no_longer_exist:
+        pass
+    else:
+        title=soup.title.text
+        price=soup.select('span.price.c_f50')[0].text
+        date=soup.select('.time')[0].text
+        area=list(soup.select('.c_25d a')[0].stripped_strings)if soup.find_all('span','c_25d') else None
+        item_info.insert_one({'title':title,'price':price,'date':date,'area':area})
+【9】jieba分词+wordcloud展示
+# encoding=utf-8
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import jieba
+# 中文分词处理
+def  main():
+    # 读取文本
+    text = open('D:/1.txt', encoding = 'utf-8').read()
+    # jieba分词
+    text =text.replace('\n','')
+    text =text.replace('，','')
+    text =text.replace('。','')
+    text =text.replace('\u3000','')
+    ci=list(jieba.cut(text))
+    back_coloring = plt.imread('C:/Users/fei/Desktop/20160721185925416.jpg')
+    # Generate a word cloud image
+    wordcloud = WordCloud(font_path='C:\Windows\Fontsbackground\simkai.ttf',   #字体路径
+                          mask=back_coloring,                                  #图片路径
+                          max_words = 50, min_font_size = 20,max_font_size = 300, random_state = 42).generate(text)
+    # Display the generated image:
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    plt.savefig("filename.png")         #注意先后顺序 先savefig再show
+    plt.show()                          
+main()
+【10】词频统计
+import re
+from collections import Counter
+a='你好，啊啊，啊实打实的，你好'
+b=re.split('\W',a)
+text1=Counter(b)
+print(text1)
+【11】写入txt 及 显示字数大于3的高频词
+# encoding=utf-8
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import jieba
+from collections import Counter
+import json
+# 中文分词处理
+def  main():
+    # 读取文本
+    b={}
+    text = open('D:/1.txt', encoding = 'utf-8').read()
+    # jieba分词
+    text =text.replace('\n','')
+    text =text.replace('，','')
+    text =text.replace('。','')
+    text =text.replace('\u3000','')
+    ci=list(jieba.cut(text))
+    a=Counter(text)                    #将按词频排序
+    for key in a.keys():
+        if len(key)>2:                 #寻找字数大于3的高频词
+             b[key]=a[key]             
+        else:
+             pass
+    f=open('D:/11.txt','w')
+    b=json.dumps(b,ensure_ascii=False) #json.dumps 序列化时默认使用的ascii编码，想输出真正的中文需要指定ensure_ascii=False
+                                       #json.dumps()字典转变为str格式
+    f.write(b)                         #写入txt  向txt写入的应为str格式
+    b = Counter(b)
+    b=b.most_common()
+    c=''
+    for i in range(50):
+        c += b[i][0] + ' '          #b[i][0]  b[i]是元组
+    back_coloring = plt.imread('C:/Users/fei/Desktop/20160721185925416.jpg')
+    # Generate a word cloud image
+    wordcloud = WordCloud(font_path='C:\Windows\Fontsbackground\simkai.ttf',   #字体路径
+                          mask=back_coloring,                                  #图片路径
+                          max_words = 50,
+                          min_font_size = 20,
+                          max_font_size = 300,
+                          random_state = 42).generate(c)                       #c应为字符串
+    # Display the generated image:
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    plt.savefig("filename.png")         #注意先后顺序 先savefig再show
+    plt.show()
+main()
+
+
+
